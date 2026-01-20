@@ -243,6 +243,7 @@ ARG_ENABL_SET([dhcp],           [enable DHCP based attribute provider plugin.])
 ARG_ENABL_SET([osx-attr],       [enable OS X SystemConfiguration attribute handler.])
 ARG_ENABL_SET([p-cscf],         [enable plugin to request P-CSCF server addresses from an ePDG.])
 ARG_DISBL_SET([resolve],        [disable resolve DNS handler plugin.])
+ARG_ENABL_SET([subnet],         [enable IKEv2 split-tunnel subnet handler plugin.])
 ARG_ENABL_SET([unity],          [enables Cisco Unity extension plugin.])
 # TNC modules/plugins
 ARG_ENABL_SET([imc-test],       [enable IMC test module.])
@@ -1675,6 +1676,7 @@ ADD_PLUGIN([duplicheck],           [c charon])
 ADD_PLUGIN([coupling],             [c charon])
 ADD_PLUGIN([radattr],              [c charon])
 ADD_PLUGIN([addrblock],            [c charon])
+ADD_PLUGIN([subnet],               [c charon])
 ADD_PLUGIN([unity],                [c charon])
 ADD_PLUGIN([counters],             [c charon])
 
@@ -1849,6 +1851,7 @@ AM_CONDITIONAL(USE_CONNMARK, test x$connmark = xtrue)
 AM_CONDITIONAL(USE_FORECAST, test x$forecast = xtrue)
 AM_CONDITIONAL(USE_FARP, test x$farp = xtrue)
 AM_CONDITIONAL(USE_ADDRBLOCK, test x$addrblock = xtrue)
+AM_CONDITIONAL(USE_SUBNET, test x$subnet = xtrue)
 AM_CONDITIONAL(USE_UNITY, test x$unity = xtrue)
 AM_CONDITIONAL(USE_RESOLVE, test x$resolve = xtrue)
 AM_CONDITIONAL(USE_ATTR, test x$attr = xtrue)
@@ -2126,6 +2129,7 @@ AC_CONFIG_FILES([
 	src/libcharon/plugins/medsrv/Makefile
 	src/libcharon/plugins/medcli/Makefile
 	src/libcharon/plugins/addrblock/Makefile
+	src/libcharon/plugins/subnet/Makefile
 	src/libcharon/plugins/unity/Makefile
 	src/libcharon/plugins/ha/Makefile
 	src/libcharon/plugins/kernel_netlink/Makefile

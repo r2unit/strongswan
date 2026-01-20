@@ -560,12 +560,18 @@ static status_t process_certificate(private_tls_peer_t *this,
 			{
 				if (!cert->has_subject(cert, this->server))
 				{
-					DBG1(DBG_TLS, "server certificate does not match to '%Y'",
-						 this->server);
-					cert->destroy(cert);
-					certs->destroy(certs);
-					this->alert->add(this->alert, TLS_FATAL, TLS_ACCESS_DENIED);
-					return NEED_MORE;
+					if (!lib->settings->get_bool(lib->settings,
+							"%s.tls.trust_unknown_certs", FALSE, lib->ns))
+					{
+						DBG1(DBG_TLS, "server certificate does not match to '%Y'",
+							 this->server);
+						cert->destroy(cert);
+						certs->destroy(certs);
+						this->alert->add(this->alert, TLS_FATAL, TLS_ACCESS_DENIED);
+						return NEED_MORE;
+					}
+					DBG1(DBG_TLS, "accepting server certificate '%Y' (trust_unknown_certs enabled)",
+						 cert->get_subject(cert));
 				}
 				this->server_auth->add(this->server_auth,
 									   AUTH_HELPER_SUBJECT_CERT, cert);
@@ -613,10 +619,26 @@ static status_t process_cert_verify(private_tls_peer_t *this,
 	public = tls_find_public_key(this->server_auth, this->server);
 	if (!public)
 	{
-		DBG1(DBG_TLS, "no trusted certificate found for '%Y' to verify TLS server",
-			 this->server);
-		this->alert->add(this->alert, TLS_FATAL, TLS_CERTIFICATE_UNKNOWN);
-		return NEED_MORE;
+		certificate_t *cert;
+		
+		if (lib->settings->get_bool(lib->settings,
+				"%s.tls.trust_unknown_certs", FALSE, lib->ns))
+		{
+			cert = this->server_auth->get(this->server_auth, AUTH_HELPER_SUBJECT_CERT);
+			if (cert)
+			{
+				DBG1(DBG_TLS, "trusting unknown server certificate for '%Y'",
+					 this->server);
+				public = cert->get_public_key(cert);
+			}
+		}
+		if (!public)
+		{
+			DBG1(DBG_TLS, "no trusted certificate found for '%Y' to verify TLS server",
+				 this->server);
+			this->alert->add(this->alert, TLS_FATAL, TLS_CERTIFICATE_UNKNOWN);
+			return NEED_MORE;
+		}
 	}
 
 	msg = reader->peek(reader);
@@ -662,9 +684,23 @@ static status_t process_modp_key_exchange(private_tls_peer_t *this,
 	public = tls_find_public_key(this->server_auth, this->server);
 	if (!public)
 	{
-		DBG1(DBG_TLS, "no TLS public key found for server '%Y'", this->server);
-		this->alert->add(this->alert, TLS_FATAL, TLS_CERTIFICATE_UNKNOWN);
-		return NEED_MORE;
+		certificate_t *cert;
+		
+		if (lib->settings->get_bool(lib->settings,
+				"%s.tls.trust_unknown_certs", FALSE, lib->ns))
+		{
+			cert = this->server_auth->get(this->server_auth, AUTH_HELPER_SUBJECT_CERT);
+			if (cert)
+			{
+				public = cert->get_public_key(cert);
+			}
+		}
+		if (!public)
+		{
+			DBG1(DBG_TLS, "no TLS public key found for server '%Y'", this->server);
+			this->alert->add(this->alert, TLS_FATAL, TLS_CERTIFICATE_UNKNOWN);
+			return NEED_MORE;
+		}
 	}
 
 	chunk.len = 2 + prime.len + 2 + generator.len + 2 + pub.len;
@@ -769,9 +805,23 @@ static status_t process_ec_key_exchange(private_tls_peer_t *this,
 	public = tls_find_public_key(this->server_auth, this->server);
 	if (!public)
 	{
-		DBG1(DBG_TLS, "no TLS public key found for server '%Y'", this->server);
-		this->alert->add(this->alert, TLS_FATAL, TLS_CERTIFICATE_UNKNOWN);
-		return NEED_MORE;
+		certificate_t *cert;
+		
+		if (lib->settings->get_bool(lib->settings,
+				"%s.tls.trust_unknown_certs", FALSE, lib->ns))
+		{
+			cert = this->server_auth->get(this->server_auth, AUTH_HELPER_SUBJECT_CERT);
+			if (cert)
+			{
+				public = cert->get_public_key(cert);
+			}
+		}
+		if (!public)
+		{
+			DBG1(DBG_TLS, "no TLS public key found for server '%Y'", this->server);
+			this->alert->add(this->alert, TLS_FATAL, TLS_CERTIFICATE_UNKNOWN);
+			return NEED_MORE;
+		}
 	}
 
 	chunk.len = 4 + pub.len;
@@ -1604,9 +1654,23 @@ static status_t send_key_exchange_encrypt(private_tls_peer_t *this,
 	public = tls_find_public_key(this->server_auth, this->server);
 	if (!public)
 	{
-		DBG1(DBG_TLS, "no TLS public key found for server '%Y'", this->server);
-		this->alert->add(this->alert, TLS_FATAL, TLS_CERTIFICATE_UNKNOWN);
-		return NEED_MORE;
+		certificate_t *cert;
+		
+		if (lib->settings->get_bool(lib->settings,
+				"%s.tls.trust_unknown_certs", FALSE, lib->ns))
+		{
+			cert = this->server_auth->get(this->server_auth, AUTH_HELPER_SUBJECT_CERT);
+			if (cert)
+			{
+				public = cert->get_public_key(cert);
+			}
+		}
+		if (!public)
+		{
+			DBG1(DBG_TLS, "no TLS public key found for server '%Y'", this->server);
+			this->alert->add(this->alert, TLS_FATAL, TLS_CERTIFICATE_UNKNOWN);
+			return NEED_MORE;
+		}
 	}
 	if (!public->encrypt(public, ENCRYPT_RSA_PKCS1, NULL,
 						 chunk_from_thing(premaster), &encrypted))

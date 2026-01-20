@@ -677,6 +677,13 @@ if MONOLITHIC
 endif
 endif
 
+if USE_SUBNET
+  SUBDIRS += plugins/subnet
+if MONOLITHIC
+  libcharon_la_LIBADD += plugins/subnet/libstrongswan-subnet.la
+endif
+endif
+
 if USE_UNITY
   SUBDIRS += plugins/unity
 if MONOLITHIC
