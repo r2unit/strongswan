@@ -371,6 +371,10 @@ typedef struct {
 	bool v4;
 	/** request IPv6 DNS? */
 	bool v6;
+	/** request IPv4 subnet (split-tunnel)? */
+	bool v4_subnet;
+	/** request IPv6 subnet (split-tunnel)? */
+	bool v6_subnet;
 } attribute_enumerator_t;
 
 METHOD(enumerator_t, attribute_enumerate, bool,
@@ -392,6 +396,20 @@ METHOD(enumerator_t, attribute_enumerate, bool,
 		*type = INTERNAL_IP6_DNS;
 		*data = chunk_empty;
 		this->v6 = FALSE;
+		return TRUE;
+	}
+	if (this->v4_subnet)
+	{
+		*type = INTERNAL_IP4_SUBNET;
+		*data = chunk_empty;
+		this->v4_subnet = FALSE;
+		return TRUE;
+	}
+	if (this->v6_subnet)
+	{
+		*type = INTERNAL_IP6_SUBNET;
+		*data = chunk_empty;
+		this->v6_subnet = FALSE;
 		return TRUE;
 	}
 	return FALSE;
@@ -425,6 +443,10 @@ METHOD(attribute_handler_t, create_attribute_enumerator, enumerator_t*,
 	linked_list_t *vips)
 {
 	attribute_enumerator_t *enumerator;
+	bool request_subnet;
+
+	request_subnet = lib->settings->get_bool(lib->settings,
+						"%s.plugins.resolve.request_subnet", FALSE, lib->ns);
 
 	INIT(enumerator,
 		.public = {
@@ -434,6 +456,8 @@ METHOD(attribute_handler_t, create_attribute_enumerator, enumerator_t*,
 		},
 		.v4 = has_host_family(vips, AF_INET),
 		.v6 = has_host_family(vips, AF_INET6),
+		.v4_subnet = request_subnet && has_host_family(vips, AF_INET),
+		.v6_subnet = request_subnet && has_host_family(vips, AF_INET6),
 	);
 	return &enumerator->public;
 }
